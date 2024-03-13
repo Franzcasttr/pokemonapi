@@ -1,9 +1,6 @@
 package com.pokemonapireview.api.models;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -17,7 +14,10 @@ public class Review {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int Id;
     private  String title;
-    private String comment;
-    private int start;
+    private String content;
+    private int stars;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pokemon_id")
+    private Pokemon pokemon;
 }
