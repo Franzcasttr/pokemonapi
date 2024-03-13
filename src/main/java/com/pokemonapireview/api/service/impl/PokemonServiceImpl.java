@@ -1,10 +1,15 @@
 package com.pokemonapireview.api.service.impl;
 
 import com.pokemonapireview.api.dto.PokemonDto;
+import com.pokemonapireview.api.dto.PokemonResponse;
+import com.pokemonapireview.api.exeptions.PokemonNotFoundException;
 import com.pokemonapireview.api.models.Pokemon;
 import com.pokemonapireview.api.repository.PokemonRepository;
 import com.pokemonapireview.api.service.PokemonService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -37,17 +42,46 @@ public class PokemonServiceImpl implements PokemonService {
     }
 
     @Override
-    public List<PokemonDto> getAllPokemons() {
-    List<Pokemon> pokemons = pokemonRepository.findAll();
-        return pokemons.stream().map(this::mapToDto).collect(Collectors.toList());
+    public PokemonResponse getAllPokemons(int pageNo, int pageSize) {
+        Pageable pageable = PageRequest.of(pageNo, pageSize);
+
+    Page<Pokemon> pokemons = pokemonRepository.findAll(pageable);
+    List<Pokemon> listOfPokemon = pokemons.getContent();  //get the content from the pokemon
+    List<PokemonDto> content = listOfPokemon.stream().map(this::mapToDto).collect(Collectors.toList());
+
+        PokemonResponse pokemonResponse = new PokemonResponse();
+        pokemonResponse.setContent(content);
+        pokemonResponse.setPageNo(pokemons.getNumber());
+        pokemonResponse.setPageSize(pokemons.getTotalPages());
+        pokemonResponse.setTotalElements(pokemons.getTotalElements());
+        pokemonResponse.setLast(pokemons.isLast());
+
+        return pokemonResponse;
     }
 
     @Override
-    public PokemonDto getPokemon(int id) {
+    public PokemonDto getPokemonById(int id) {
 
-//        PokemonDto pokemon = pokemonRepository.findById(id);
+        Pokemon pokemon = pokemonRepository.findById(id).orElseThrow(()-> new PokemonNotFoundException("Pokemon not found"));
+        return mapToDto(pokemon);
 
-        return null;
+    }
+
+    @Override
+    public PokemonDto updatePokemonById(PokemonDto pokemonDto, int id) {
+        Pokemon pokemon = pokemonRepository.findById(id).orElseThrow(()-> new PokemonNotFoundException("pokemon not found"));
+        pokemon.setName(pokemonDto.getName());
+        pokemon.setType(pokemonDto.getType());
+
+        Pokemon updatePokemon = pokemonRepository.save(pokemon);
+
+        return mapToDto(updatePokemon);
+    }
+
+    @Override
+    public void deletePokemonById(int id) {
+        Pokemon pokemon = pokemonRepository.findById(id).orElseThrow(()-> new PokemonNotFoundException("pokemon could not delete"));
+        pokemonRepository.delete(pokemon);
     }
 
 
